@@ -1,6 +1,9 @@
 package data;
 
+import services.PublicHolidayService;
+
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 
 public class Course {
     private String name;
@@ -55,5 +58,53 @@ public class Course {
 
     public void setTeacher(Teacher teacher) {
         this.teacher = teacher;
+    }
+
+    public long getWorkingDays() {
+        if (endDate.isAfter(startDate)) {
+
+            final int startW = startDate.getDayOfWeek().getValue();
+            final int endW = endDate.getDayOfWeek().getValue();
+
+            try {
+                //List<ZonedDateTime> holidays = publicHolidayService.getPublicHolidays(String.valueOf(startDate.getYear()));
+
+
+                final long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+                long result = days - 2*(days/7); //remove weekends
+
+                if (days % 7 != 0) { //deal with the rest days
+                    if (startW == 7) {
+                        result -= 1;
+                    } else if (endW == 7) {  //they can't both be Sunday, otherwise rest would be zero
+                        result -= 1;
+                    } else if (endW < startW) { //another weekend is included
+                        result -= 2;
+                    }
+                }
+
+
+                return result;
+
+            } catch (Exception ex) {
+                throw new IllegalArgumentException("bad data");
+            }
+
+        } else {
+            throw new IllegalArgumentException("wtf");
+        }
+    }
+
+
+
+    public long getLength(){
+        PublicHolidayService publicHolidayService = new PublicHolidayService();
+//        long koikPaevad = ChronoUnit.DAYS.between(startDate, endDate) +1;
+//        long kooliPaevad = koikPaevad - publicHolidayService.getPublicHolidaysOnWorkdays(startDate,endDate)
+        return  getWorkingDays() - publicHolidayService.getPublicHolidaysOnWorkdays(startDate,endDate);
+
+
+
+
     }
 }
